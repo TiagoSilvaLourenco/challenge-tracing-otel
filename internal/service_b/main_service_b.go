@@ -1,9 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 )
+
+type ViaCepResponse struct {
+	Localidade string `json:"localidade"`
+	Erro       bool   `json:"erro"`
+}
+
+type Request struct {
+	Cep string `json:"cep"`
+}
 
 func main() {
 	http.HandleFunc("/cep", handleServiceB)
@@ -19,6 +31,17 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cep := r.FormValue("cep")
-	fmt.Fprintf(w, "CEP received in Service B: %s", cep)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var req Request
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, "Error decoding request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Received request with CEP: %s\n", req.Cep)
 }

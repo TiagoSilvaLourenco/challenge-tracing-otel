@@ -10,10 +10,6 @@ import (
 type Zipcode struct {
 	Zipcode interface{} `json:"cep"`
 }
-type ViaCepResponse struct {
-	Localidade string `json:"localidade"`
-	Erro       bool   `json:"erro"`
-}
 
 func main() {
 	http.HandleFunc("/cep", ServiceA)

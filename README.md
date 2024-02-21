@@ -1,6 +1,8 @@
 # challenge-tracing-otel
 
-# How to test:
+## How to works
+
+## How to test:
 
 - Run comand `docker compose up`
 
