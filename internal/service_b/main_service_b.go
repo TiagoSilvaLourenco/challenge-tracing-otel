@@ -43,5 +43,30 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received request with CEP: %s\n", req.Cep)
+	if len(req.Cep) != 8 {
+		http.Error(w, "Invalid CEP", http.StatusUnprocessableEntity)
+		return
+	}
+
+	resp, err := http.Get("https://viacep.com.br/ws/" + req.Cep + "/json/")
+	if err != nil {
+		http.Error(w, "Error making request to ViaCEP API", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Decode the response body into the ViaCepResponse struct.
+	var viaCepResponse ViaCepResponse
+	if err := json.NewDecoder(resp.Body).Decode(&viaCepResponse); err != nil {
+		http.Error(w, "Error decoding ViaCEP API response", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if there was an error in the ViaCEP API response.
+	if viaCepResponse.Erro {
+		http.Error(w, "Error in ViaCEP API response, don't found CEP", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Localidade for CEP %s: %s\n", req.Cep, viaCepResponse.Localidade)
 }
