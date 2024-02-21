@@ -13,7 +13,13 @@
   "cep": "01001000"
   }
 
-- The result with status is:
+- The result with status 200 is:
+  {
+  "city": "Serra",
+  "temp_C": 28,
+  "temp_F": 82.4,
+  "temp_K": 301
+  }
 
 <!--
 Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
