@@ -1,0 +1,14 @@
+version: "3"
+services:
+  service_a:
+    build:
+      context: .
+      dockerfile: ./internal/service_a/Dockerfile
+    ports:
+      - "8080:8080"
+  service_b:
+    build:
+      context: .
+      dockerfile: ./internal/service_b/Dockerfile
+    ports:
+      - "8081:8081"

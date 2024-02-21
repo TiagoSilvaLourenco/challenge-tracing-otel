@@ -1,5 +1,11 @@
 # challenge-tracing-otel
 
+# How to test:
+
+- Run comand `docker compose up`
+
+- For rebuild run comand `docker-compose up --build`
+
 <!--
 Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
 
@@ -15,6 +21,7 @@ Caso seja válido, será encaminhado para o Serviço B via HTTP
 Caso não seja válido, deve retornar:
 Código HTTP: 422
 Mensagem: invalid zipcode
+
 Requisitos - Serviço B (responsável pela orquestração):
 
 O sistema deve receber um CEP válido de 8 digitos

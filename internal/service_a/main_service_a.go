@@ -54,7 +54,7 @@ func ServiceA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Post("http://localhost:8081/cep", "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post("http://service_b:8081/cep", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
