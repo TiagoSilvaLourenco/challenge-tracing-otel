@@ -4,9 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"strconv"
 )
+
+type WeatherResult struct {
+	City  string  `json:"city"`
+	TempC float64 `json:"temp_C"`
+	TempF float64 `json:"temp_F"`
+	TempK float64 `json:"temp_K"`
+}
+
+type WeatherAPIResponse struct {
+	Location struct {
+		Name string `json:"name"`
+	} `json:"location"`
+	Current struct {
+		TempC float64 `json:"temp_c"`
+	} `json:"current"`
+}
 
 type ViaCepResponse struct {
 	Localidade string `json:"localidade"`
@@ -48,15 +64,30 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received request with CEP: %s\n", req.Cep)
-
 	localidade, err := getLocalidadeFromViaCep(req.Cep)
 	if err != nil {
 		http.Error(w, "Error getting localidade from ViaCEP API", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Localidade for CEP %s: %s\n", req.Cep, localidade)
+	weather, err := getWeather(localidade)
+	if err != nil {
+		http.Error(w, "Error getting weather from WeatherAPI", http.StatusInternalServerError)
+		return
+	}
+
+	// Serializar a resposta da API para JSON
+	jsonData, err := json.Marshal(weather)
+	if err != nil {
+		http.Error(w, "Error encoding weather data", http.StatusInternalServerError)
+		return
+	}
+
+	// Definir o cabeçalho de conteúdo para application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Escrever a resposta JSON
+	w.Write(jsonData)
 }
 
 func getLocalidadeFromViaCep(cep string) (string, error) {
@@ -76,4 +107,30 @@ func getLocalidadeFromViaCep(cep string) (string, error) {
 	}
 
 	return viaCepResponse.Localidade, nil
+}
+
+func getWeather(localidade string) (WeatherResult, error) {
+	resp, err := http.Get(fmt.Sprintf("https://api.weatherapi.com/v1/current.json?q=%s&key=3841b81037a5427eb51191826241702", localidade))
+	if err != nil {
+		return WeatherResult{}, err
+	}
+	defer resp.Body.Close()
+
+	var weatherResponse WeatherAPIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&weatherResponse); err != nil {
+		return WeatherResult{}, err
+	}
+
+	tempC, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", weatherResponse.Current.TempC), 64)
+	tempF, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", weatherResponse.Current.TempC*1.8+32), 64)
+	tempK, _ := strconv.ParseFloat(fmt.Sprintf("%.1f", weatherResponse.Current.TempC+273), 64)
+
+	weatherResult := WeatherResult{
+		City:  weatherResponse.Location.Name,
+		TempC: tempC,
+		TempF: tempF,
+		TempK: tempK,
+	}
+
+	return weatherResult, nil
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -57,5 +58,27 @@ func ServiceA(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Fprintf(w, "CEP enviado para o Serviço B: %s", cepStr)
+	// read the response from Service B
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Unmarshal the JSON response
+	var result interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Marshal the result with indentation
+	formattedBody, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Write the formatted response from Service B to the response of Service A
+	w.Write(formattedBody)
 }
