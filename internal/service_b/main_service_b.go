@@ -48,25 +48,32 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Get("https://viacep.com.br/ws/" + req.Cep + "/json/")
+	log.Printf("Received request with CEP: %s\n", req.Cep)
+
+	localidade, err := getLocalidadeFromViaCep(req.Cep)
 	if err != nil {
-		http.Error(w, "Error making request to ViaCEP API", http.StatusInternalServerError)
+		http.Error(w, "Error getting localidade from ViaCEP API", http.StatusInternalServerError)
 		return
+	}
+
+	log.Printf("Localidade for CEP %s: %s\n", req.Cep, localidade)
+}
+
+func getLocalidadeFromViaCep(cep string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep))
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	// Decode the response body into the ViaCepResponse struct.
 	var viaCepResponse ViaCepResponse
 	if err := json.NewDecoder(resp.Body).Decode(&viaCepResponse); err != nil {
-		http.Error(w, "Error decoding ViaCEP API response", http.StatusInternalServerError)
-		return
+		return "", err
 	}
 
-	// Check if there was an error in the ViaCEP API response.
 	if viaCepResponse.Erro {
-		http.Error(w, "Error in ViaCEP API response, don't found CEP", http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("Error in ViaCEP API response")
 	}
 
-	log.Printf("Localidade for CEP %s: %s\n", req.Cep, viaCepResponse.Localidade)
+	return viaCepResponse.Localidade, nil
 }
