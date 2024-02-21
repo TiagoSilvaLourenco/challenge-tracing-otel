@@ -33,6 +33,7 @@ Após a implementação dos serviços, adicione a implementação do OTEL + Zipk
 
 Implementar tracing distribuído entre Serviço A - Serviço B
 Utilizar span para medir o tempo de resposta do serviço de busca de CEP e busca de temperatura
+
 Dicas:
 
 Utilize a API viaCEP (ou similar) para encontrar a localização que deseja consultar a temperatura: https://viacep.com.br/
