@@ -8,16 +8,21 @@
 
 - For rebuild run comand `docker-compose up --build`
 
+- Send a request by json POST to `http://localhost:8080/cep` with body:
+  {
+  "cep": "01001000"
+  }
+
+- The result with status is:
+
 <!--
 Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
 
 Basedo no cenário conhecido "Sistema de temperatura por CEP" denominado Serviço B, será incluso um novo projeto, denominado Serviço A.
 
- 
-
 Requisitos - Serviço A (responsável pelo input):
 
-O sistema deve receber um input de 8 dígitos via POST, através do schema:  { "cep": "29902555" }
+O sistema deve receber um input de 8 dígitos via POST, através do schema: { "cep": "29902555" }
 O sistema deve validar se o input é valido (contem 8 dígitos) e é uma STRING
 Caso seja válido, será encaminhado para o Serviço B via HTTP
 Caso não seja válido, deve retornar:
@@ -47,7 +52,7 @@ Dicas:
 
 Utilize a API viaCEP (ou similar) para encontrar a localização que deseja consultar a temperatura: https://viacep.com.br/
 Utilize a API WeatherAPI (ou similar) para consultar as temperaturas desejadas: https://www.weatherapi.com/
-Para realizar a conversão de Celsius para Fahrenheit, utilize a seguinte fórmula: F = C * 1,8 + 32
+Para realizar a conversão de Celsius para Fahrenheit, utilize a seguinte fórmula: F = C \* 1,8 + 32
 Para realizar a conversão de Celsius para Kelvin, utilize a seguinte fórmula: K = C + 273
 Sendo F = Fahrenheit
 Sendo C = Celsius
