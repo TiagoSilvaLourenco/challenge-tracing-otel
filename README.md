@@ -3,7 +3,7 @@
 ## How to works
 
 This software make request via POST and receive a response with the temperature in celsius, fahrenheit and kelvin and city.
-To know about temperature in your city. You can see the traces of spans in Zipkin.
+To know about temperature in your city. You can see the traces of spans in Zipkin. Was implemented OTEL and Zipkin in this project.
 
 ## How to test:
 
@@ -31,7 +31,11 @@ To know about temperature in your city. You can see the traces of spans in Zipki
 - If any service to fail, you can run the command: `docker compose restart` to restart all the services.
 - Case you prefer, you can run the command `docker compose restart service_a` to restart only the service_a. The same for service_b.
 
-## Challenge
+## Bibliograpy
+
+- https://opentelemetry.io/docs/languages/go/
+- https://zipkin.io/
+- https://github.com/openzipkin-attic/docker-zipkin/blob/master/docker-compose.yml
 
 <!--
 Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
