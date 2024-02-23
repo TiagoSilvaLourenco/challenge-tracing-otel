@@ -2,6 +2,8 @@
 
 ## How to works
 
+This software make request
+
 ## How to test:
 
 - Run comand `docker compose up`
@@ -20,6 +22,15 @@
   "temp_F": 82.4,
   "temp_K": 301
   }
+
+- Access Zipkin in: http://127.0.0.1:9411/zipkin/ to see the traces of spans
+
+### OBS:
+
+- If any service to fail, you can run the command: `docker compose restart` to restart all the services.
+- Case you prefer, you can run the command `docker compose restart service_a` to restart only the service_a. The same for service_b.
+
+## Challenge
 
 <!--
 Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
