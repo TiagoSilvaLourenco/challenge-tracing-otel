@@ -19,6 +19,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
 type TemplateData struct {
 	ResponseTime time.Duration
 	OTELTracer   trace.Tracer
@@ -53,75 +57,6 @@ type Request struct {
 	Cep string `json:"cep"`
 }
 
-// func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-// 	carrier := propagation.HeaderCarrier(r.Header)
-// 	ctx := r.Context()
-// 	ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
-
-// 	ctx, span := h.templateData.OTELTracer.Start(ctx, "Service B Request")
-// 	defer span.End()
-
-// 	time.Sleep(time.Millisecond * h.templateData.ResponseTime)
-
-// 	if r.Method != http.MethodPost {
-// 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-// 		return
-// 	}
-
-// 	body, err := io.ReadAll(r.Body)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	var req Request
-// 	if err := json.Unmarshal(body, &req); err != nil {
-// 		http.Error(w, "Error decoding request body", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	if len(req.Cep) != 8 {
-// 		http.Error(w, "Invalid CEP", http.StatusUnprocessableEntity)
-// 		return
-// 	}
-
-// 	// Span para busca de localidade no ViaCEP
-// 	ctx, viaCepSpan := h.templateData.OTELTracer.Start(ctx, "ViaCEP API Call")
-// 	viaCepSpan.SetAttributes(semconv.HTTPMethod(http.MethodGet), semconv.HTTPURL("https://viacep.com.br/ws/"+req.Cep+"/json/"))
-// 	defer viaCepSpan.End()
-
-// 	localidade, err := getLocalidadeFromViaCep(ctx, req.Cep)
-// 	if err != nil {
-// 		http.Error(w, "Error getting localidade from ViaCEP API", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Span para busca de temperatura no WeatherAPI
-// 	ctx, weatherSpan := h.templateData.OTELTracer.Start(ctx, "WeatherAPI Call")
-// 	weatherSpan.SetAttributes(semconv.HTTPMethod(http.MethodGet), semconv.HTTPURL("https://api.weatherapi.com/v1/current.json?q="+localidade+"&key=3841b81037a5427eb51191826241702"))
-// 	defer weatherSpan.End()
-
-// 	weather, err := getWeather(ctx, localidade)
-// 	if err != nil {
-// 		http.Error(w, "Error getting weather from WeatherAPI", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Serializar a resposta da API para JSON
-// 	jsonData, err := json.Marshal(weather)
-// 	if err != nil {
-// 		http.Error(w, "Error encoding weather data", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Definir o cabeçalho de conteúdo para application/json
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	// Escrever a resposta JSON
-// 	w.Write(jsonData)
-// }
-
 func main() {
 	// Configure o exportador para enviar os spans de tracing para o Zipkin.
 	exporter, err := zipkin.New(
@@ -135,10 +70,6 @@ func main() {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
-	// Configure o propagador global para usar o formato B3 (usado pelo Zipkin).
-	// b3Propagator := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader))
-	// otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}, b3Propagator))
-
 	http.HandleFunc("/cep", handleServiceB)
 
 	fmt.Println("Service B running on port 8081")
@@ -151,16 +82,6 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 	ctx := otel.GetTextMapPropagator().Extract(context.Background(), propagation.HeaderCarrier(r.Header))
 	_, spanHandleServiceB := otel.GetTracerProvider().Tracer("service_b").Start(ctx, "handleServiceB")
 	defer spanHandleServiceB.End()
-
-	// // Extraia o contexto do span do cabeçalho HTTP.
-	// ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
-
-	// // Agora você pode começar a criar spans de tracing.
-	// tracer := otel.Tracer("service_b")
-
-	// // Crie um novo span.
-	// _, span := tracer.Start(ctx, "handleServiceB")
-	// defer span.End()
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -185,20 +106,29 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	localidade, err := getLocalidadeFromViaCep(ctx, req.Cep)
-	if err != nil {
-		http.Error(w, "Error getting localidade from ViaCEP API", http.StatusInternalServerError)
-		return
-	}
+
 	_, spanLocalidade := otel.GetTracerProvider().Tracer("service_b").Start(ctx, "Return from getLocalidadeFromViaCep")
 	spanLocalidade.SetAttributes(attribute.String("localidade", localidade))
 	defer spanLocalidade.End()
 
-	// tracer = otel.Tracer("service_b")
-	// ctx, span = tracer.Start(r.Context(), "busca de temperatura")
-	// defer span.End()
+	if err != nil {
+		response := errorResponse{
+			Error: "Error getting localidade from ViaCEP API",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	weather, err := getWeather(ctx, localidade)
 	if err != nil {
-		http.Error(w, "Error getting weather from WeatherAPI", http.StatusInternalServerError)
+		response := errorResponse{
+			Error: "Error getting weather from WeatherAPI",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -213,16 +143,18 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 	// Serializar a resposta da API para JSON
 	jsonData, err := json.Marshal(weather)
 	if err != nil {
-		http.Error(w, "Error encoding weather data", http.StatusInternalServerError)
+		response := errorResponse{
+			Error: "Error encoding weather data",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	// Definir o cabeçalho de conteúdo para application/json
 	w.Header().Set("Content-Type", "application/json")
 
-	// fmt.Println(string(jsonData))
-	// log.Println(w.Header().Get("Content"))
-	// Escrever a resposta JSON
 	_, spanJsonData := otel.GetTracerProvider().Tracer("service_b").Start(ctx, "Return jsonData to service A")
 	defer spanJsonData.End()
 
@@ -266,8 +198,6 @@ func getWeather(ctx context.Context, localidade string) (WeatherResult, error) {
 
 	// scape the URL
 	urlWeatherAPI := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?q=%s&key=3841b81037a5427eb51191826241702", url.QueryEscape(localidade))
-
-	fmt.Println(urlWeatherAPI)
 
 	//
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlWeatherAPI, nil)

@@ -57,7 +57,7 @@ func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// ctx, span := tracer.Start(ctx, "ServeHTTP")
 	// defer span.End()
 
-	time.Sleep(time.Millisecond * h.templateData.ResponseTime)
+	// time.Sleep(time.Millisecond * h.templateData.ResponseTime)
 
 	if h.templateData.ExternalCallURL != "" {
 

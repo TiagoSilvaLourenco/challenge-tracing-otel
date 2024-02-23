@@ -2,7 +2,8 @@
 
 ## How to works
 
-This software make request
+This software make request via POST and receive a response with the temperature in celsius, fahrenheit and kelvin and city.
+To know about temperature in your city. You can see the traces of spans in Zipkin.
 
 ## How to test:
 
