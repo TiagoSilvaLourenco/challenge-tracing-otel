@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: ./internal/service_a/Dockerfile
     environment:
-      - RESPONSE_TIME=3000
+      - RESPONSE_TIME=2000
       - EXTERNAL_CALL_URL=http://service_b:8081/cep
       - EXTERNAL_CALL_METHOD=POST
       - REQUEST_NAME_OTEL=service_a-request

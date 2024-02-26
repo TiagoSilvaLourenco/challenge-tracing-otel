@@ -28,8 +28,8 @@ To know about temperature in your city. You can see the traces of spans in Zipki
 
 ### OBS:
 
-- If any service to fail, you can run the command: `docker compose restart` to restart all the services.
-- Case you prefer, you can run the command `docker compose restart service_a` to restart only the service_a. The same for service_b.
+- If any service to fail, you can run the command: `docker compose down` and then `docker compose up` to restart the services.
+- Case you prefer, you can run the command `docker compose restart service_a` to restart only the specific service_a. The same for service_b.
 
 ## Bibliograpy
 
