@@ -113,10 +113,10 @@ func handleServiceB(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		response := errorResponse{
-			Error: "Error getting localidade from ViaCEP API",
+			Error: "can not find zipcode",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(response)
 		return
 	}

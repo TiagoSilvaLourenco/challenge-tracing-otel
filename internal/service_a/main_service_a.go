@@ -26,6 +26,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
 type Zipcode struct {
 	Zipcode interface{} `json:"cep"`
 }
@@ -75,12 +79,18 @@ func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		cepStr, ok := cep.Zipcode.(string)
 		if !ok {
-			http.Error(w, "Invalid zipcode", http.StatusUnprocessableEntity)
+			response := errorResponse{Error: "Invalid zipcode"}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 
 		if len(cepStr) != 8 {
-			http.Error(w, "Zipcode must have 8 digits", http.StatusUnprocessableEntity)
+			response := errorResponse{Error: "Invalid zipcode"}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 
@@ -88,6 +98,7 @@ func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Send to Service B
 		jsonData, err := json.Marshal(Zipcode{Zipcode: cepStr})
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -107,11 +118,21 @@ func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer span.End()
 
 		resp, err := http.DefaultClient.Do(req)
+
 		if err != nil {
+
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			response := errorResponse{Error: "can not find zipcode"}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
 
 		// read the response from Service B
 		body, err := io.ReadAll(resp.Body)
@@ -128,6 +149,7 @@ func (h *ServiceAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// //
 
 		// Unmarshal the JSON response
+
 		var result interface{}
 		if err := json.Unmarshal(body, &result); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
